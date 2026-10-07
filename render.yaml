@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: rto-autopilot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # Manually set in Render dashboard
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GROQ_API_KEY
+        sync: false  # Manually set in Render dashboard
+      - key: RESEND_API_KEY
+        sync: false  # Manually set in Render dashboard
+      - key: R2_ACCOUNT_ID
+        sync: false  # Manually set in Render dashboard
+      - key: R2_ACCESS_KEY_ID
+        sync: false  # Manually set in Render dashboard
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false  # Manually set in Render dashboard
+      - key: R2_BUCKET_NAME
+        sync: false  # Manually set in Render dashboard

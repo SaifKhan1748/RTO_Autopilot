@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Your Office - RTO Autopilot</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Tailwind configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f4f8',
+                            100: '#e0e7ef',
+                            200: '#c9d6e3',
+                            300: '#a8c0d4',
+                            400: '#7fa3c0',
+                            500: '#5c8aab',
+                            600: '#447090',
+                            700: '#365972',
+                            800: '#2d4a5e',
+                            900: '#263d4f',
+                            950: '#1a2b38',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div class="text-center">
+            <h2 class="mt-6 text-3xl font-extrabold text-primary-900">
+                Create Your Office
+            </h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Set up your RTO office on RTO Autopilot
+            </p>
+        </div>
+        
+        <div class="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            {% if error %}
+            <div class="mb-4 bg-red-50 border-l-4 border-red-500 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700">{{ error }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if success %}
+            <div class="mb-4 bg-green-50 border-l-4 border-green-500 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-green-700">{{ success }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <form class="mt-6 space-y-6" action="/signup" method="POST">
+                <div class="space-y-4">
+                    <div>
+                        <label for="office_name" class="block text-sm font-medium text-gray-700">
+                            Office Name
+                        </label>
+                        <input 
+                            id="office_name" 
+                            name="office_name" 
+                            type="text" 
+                            required 
+                            class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" 
+                            placeholder="e.g., Downtown RTO Office"
+                        >
+                    </div>
+                    
+                    <div>
+                        <label for="office_code" class="block text-sm font-medium text-gray-700">
+                            Office Code (unique identifier)
+                        </label>
+                        <input 
+                            id="office_code" 
+                            name="office_code" 
+                            type="text" 
+                            required 
+                            class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" 
+                            placeholder="e.g., DOWNTOWN"
+                        >
+                        <p class="mt-1 text-xs text-gray-500">A short unique code for your office (no spaces)</p>
+                    </div>
+                    
+                    <div>
+                        <label for="display_name" class="block text-sm font-medium text-gray-700">
+                            Display Name (optional)
+                        </label>
+                        <input 
+                            id="display_name" 
+                            name="display_name" 
+                            type="text" 
+                            class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" 
+                            placeholder="e.g., Downtown RTO"
+                        >
+                        <p class="mt-1 text-xs text-gray-500">Custom name shown in the interface</p>
+                    </div>
+                    
+                    <div>
+                        <label for="admin_email" class="block text-sm font-medium text-gray-700">
+                            Admin Email
+                        </label>
+                        <input 
+                            id="admin_email" 
+                            name="admin_email" 
+                            type="email" 
+                            autocomplete="email" 
+                            required 
+                            class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" 
+                            placeholder="admin@your-office.com"
+                        >
+                    </div>
+                    
+                    <div>
+                        <label for="admin_password" class="block text-sm font-medium text-gray-700">
+                            Admin Password
+                        </label>
+                        <input 
+                            id="admin_password" 
+                            name="admin_password" 
+                            type="password" 
+                            autocomplete="new-password" 
+                            required 
+                            class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" 
+                            placeholder="••••••••"
+                        >
+                    </div>
+                    
+                    <div>
+                        <label for="admin_full_name" class="block text-sm font-medium text-gray-700">
+                            Admin Full Name
+                        </label>
+                        <input 
+                            id="admin_full_name" 
+                            name="admin_full_name" 
+                            type="text" 
+                            required 
+                            class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" 
+                            placeholder="John Doe"
+                        >
+                    </div>
+                </div>
+
+                <div>
+                    <button 
+                        type="submit" 
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    >
+                        Create Office
+                    </button>
+                </div>
+            </form>
+            
+            <div class="mt-6">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">
+                            Already have an office?
+                        </span>
+                    </div>
+                </div>
+                <div class="mt-4 text-center">
+                    <a href="/login" class="text-primary-600 hover:text-primary-500 text-sm font-medium">
+                        Sign in to existing office
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

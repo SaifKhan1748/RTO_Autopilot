@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - RTO Autopilot{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between mb-6">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-primary-900 sm:text-3xl sm:truncate">
+                Analytics Dashboard
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Office Performance Metrics
+            </p>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4 space-x-3">
+            <button onclick="exportPDF()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                Export as PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Date Range Picker -->
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <input type="date" id="start_date" name="start_date" 
+                       class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+            </div>
+            <div>
+                <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                <input type="date" id="end_date" name="end_date" 
+                       class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+            </div>
+            <div class="flex items-end">
+                <button onclick="applyDateRange()" class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Apply Date Range
+                </button>
+            </div>
+        </div>
+        <div class="mt-2 text-sm text-gray-500">
+            <span id="date_range_display">Showing data for the last 30 days</span>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loading" class="hidden text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <p class="mt-2 text-sm text-gray-500">Loading analytics data...</p>
+    </div>
+
+    <!-- Error Message -->
+    <div id="error" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-red-800" id="error_message">Error loading analytics data</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Charts -->
+    <div id="analytics_content" class="space-y-6">
+        <!-- Case Volume Chart -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-primary-900 mb-4">Case Volume Over Time</h3>
+            <div class="relative h-64">
+                <canvas id="caseVolumeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Turnaround Time Chart -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-primary-900 mb-4">Average Turnaround Time by Service Type</h3>
+            <div class="relative h-64">
+                <canvas id="turnaroundChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Document Bottlenecks Chart -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-primary-900 mb-4">Document Bottlenecks (Average Time to Receive)</h3>
+            <div class="relative h-64">
+                <canvas id="bottleneckChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Staff Performance Chart -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-primary-900 mb-4">Staff Performance (Cases Closed)</h3>
+            <div class="relative h-64">
+                <canvas id="staffPerformanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Chart instances
+    let caseVolumeChart = null;
+    let turnaroundChart = null;
+    let bottleneckChart = null;
+    let staffPerformanceChart = null;
+
+    // Initialize date inputs with default values (last 30 days)
+    function initializeDateInputs() {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 30);
+        
+        document.getElementById('end_date').value = end.toISOString().split('T')[0];
+        document.getElementById('start_date').value = start.toISOString().split('T')[0];
+    }
+
+    // Apply date range and reload analytics
+    function applyDateRange() {
+        const startDate = document.getElementById('start_date').value;
+        const endDate = document.getElementById('end_date').value;
+        
+        if (startDate && endDate) {
+            loadAnalytics(startDate, endDate);
+        } else {
+            loadAnalytics(); // Use default (last 30 days)
+        }
+    }
+
+    // Load analytics data from API
+    async function loadAnalytics(startDate = null, endDate = null) {
+        showLoading();
+        hideError();
+        
+        try {
+            let url = '/analytics/dashboard';
+            const params = new URLSearchParams();
+            
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+            
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error('Failed to load analytics data');
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                updateDateRangeDisplay(data.start_date, data.end_date);
+                renderCharts(data);
+            } else {
+                throw new Error('Invalid response from server');
+            }
+            
+        } catch (error) {
+            console.error('Error loading analytics:', error);
+            showError('Failed to load analytics data. Please try again.');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Update date range display
+    function updateDateRangeDisplay(startDate, endDate) {
+        const display = document.getElementById('date_range_display');
+        display.textContent = `Showing data from ${startDate} to ${endDate}`;
+    }
+
+    // Render all charts
+    function renderCharts(data) {
+        renderCaseVolumeChart(data.case_volume);
+        renderTurnaroundChart(data.turnaround_time);
+        renderBottleneckChart(data.document_bottlenecks);
+        renderStaffPerformanceChart(data.staff_performance);
+    }
+
+    // Render Case Volume Chart
+    function renderCaseVolumeChart(volumeData) {
+        const ctx = document.getElementById('caseVolumeChart').getContext('2d');
+        
+        if (caseVolumeChart) {
+            caseVolumeChart.destroy();
+        }
+        
+        const labels = volumeData.map(item => item.date);
+        const values = volumeData.map(item => item.count);
+        
+        caseVolumeChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Cases Created',
+                    data: values,
+                    borderColor: '#447090',
+                    backgroundColor: 'rgba(68, 112, 144, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Render Turnaround Time Chart
+    function renderTurnaroundChart(turnaroundData) {
+        const ctx = document.getElementById('turnaroundChart').getContext('2d');
+        
+        if (turnaroundChart) {
+            turnaroundChart.destroy();
+        }
+        
+        const labels = turnaroundData.map(item => item.service_type);
+        const values = turnaroundData.map(item => item.avg_turnaround_hours);
+        
+        turnaroundChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Avg Turnaround (Hours)',
+                    data: values,
+                    backgroundColor: 'rgba(92, 138, 171, 0.7)',
+                    borderColor: '#5c8aab',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Document Bottlenecks Chart
+    function renderBottleneckChart(bottleneckData) {
+        const ctx = document.getElementById('bottleneckChart').getContext('2d');
+        
+        if (bottleneckChart) {
+            bottleneckChart.destroy();
+        }
+        
+        const labels = bottleneckData.map(item => item.document_type);
+        const values = bottleneckData.map(item => item.avg_gap_hours);
+        
+        bottleneckChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Avg Gap (Hours)',
+                    data: values,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderColor: '#ef4444',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Staff Performance Chart
+    function renderStaffPerformanceChart(staffData) {
+        const ctx = document.getElementById('staffPerformanceChart').getContext('2d');
+        
+        if (staffPerformanceChart) {
+            staffPerformanceChart.destroy();
+        }
+        
+        const labels = staffData.map(item => item.staff_name);
+        const values = staffData.map(item => item.cases_closed);
+        
+        staffPerformanceChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Cases Closed',
+                    data: values,
+                    backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                    borderColor: '#22c55e',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Export as PDF
+    async function exportPDF() {
+        try {
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+            
+            let url = '/analytics/export-pdf';
+            const params = new URLSearchParams();
+            
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+            
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error('Failed to generate PDF');
+            }
+            
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `analytics_report_${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(downloadUrl);
+            
+        } catch (error) {
+            console.error('Error exporting PDF:', error);
+            alert('Failed to export PDF. Please try again.');
+        }
+    }
+
+    // UI Helper Functions
+    function showLoading() {
+        document.getElementById('loading').classList.remove('hidden');
+        document.getElementById('analytics_content').classList.add('hidden');
+    }
+
+    function hideLoading() {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('analytics_content').classList.remove('hidden');
+    }
+
+    function showError(message) {
+        document.getElementById('error_message').textContent = message;
+        document.getElementById('error').classList.remove('hidden');
+    }
+
+    function hideError() {
+        document.getElementById('error').classList.add('hidden');
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeDateInputs();
+        loadAnalytics();
+    });
+</script>
+{% endblock %}

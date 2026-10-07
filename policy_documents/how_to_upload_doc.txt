@@ -1,0 +1,188 @@
+## How to Import Documents into the RAG System
+
+Here's a step-by-step guide to add policy documents so the AI can read and answer questions from them:
+
+### Step 1: Create Policy Document Files
+
+1. **Navigate to the policy documents folder:**
+   ```bash
+   cd policy_documents
+   ```
+
+2. **Create new text files** with your policy content
+   - File naming format: `{state}_{service_type}.txt`
+   - Examples:
+     - `karnataka_license_renewal.txt`
+     - `maharashtra_vehicle_registration.txt`
+     - `tamil_nadu_transfer.txt`
+
+3. **Add your policy content** in plain text format
+   - Just copy-paste the actual policy text
+   - No special formatting needed
+   - The system will automatically chunk it
+
+### Step 2: Example Document Structure
+
+Here's how to structure your policy documents:
+
+```
+STATE SERVICE_TYPE POLICY
+
+DOCUMENT REQUIREMENTS FOR SERVICE_TYPE IN STATE
+
+For [service description], the following documents are required:
+
+1. Document Name
+   - Description/details
+   - Acceptable alternatives
+
+2. Another Document
+   - Description/details
+
+PROCEDURE AND TIMELINE
+
+- Step 1 details
+- Step 2 details
+- Timeline information
+
+FEES
+
+- Fee structure
+- Additional charges
+
+SPECIAL CASES
+
+- Exceptions
+- Special requirements
+```
+
+### Step 3: Run the Ingestion Script
+
+After adding your documents, run the ingestion script:
+
+```bash
+# Make sure you're in the project directory
+cd C:\Users\saifk\Downloads\rto-autopilot
+
+# Activate virtual environment
+venv\Scripts\activate
+
+# Run the ingestion script
+python -m app.scripts.ingest_policy_docs --folder policy_documents
+```
+
+### Step 4: What the Script Does
+
+The ingestion script automatically:
+1. **Reads** all `.txt` files from the `policy_documents` folder
+2. **Parses** the filename to extract state and service type
+3. **Splits** the text into chunks (800 characters with overlap)
+4. **Generates** embeddings using sentence-transformers
+5. **Stores** chunks in the database with metadata
+
+### Step 5: Verification
+
+You can verify the documents were ingested successfully:
+
+```bash
+python -c "from app.core.database import SessionLocal; from app.models.models import PolicyChunk; db = SessionLocal(); chunks = db.query(PolicyChunk).all(); print(f'Total chunks: {len(chunks)}'); print('Service types:', set(chunk.service_type for chunk in chunks)); print('States:', set(chunk.state for chunk in chunks)); db.close()"
+```
+
+### Step 6: Test the New Documents
+
+1. **Restart your FastAPI app** (if running)
+2. **Navigate to a case detail page** in your application
+3. **Ask a question** related to your new documents
+4. **Verify the answer** cites your new source documents
+
+### Important Notes
+
+**File Naming:**
+- Use underscores to separate parts: `state_service_type.txt`
+- State should be first: `karnataka_license_renewal.txt`
+- Service type should be descriptive: `vehicle_registration.txt`
+
+**Content Quality:**
+- Use real policy text (don't invent government rules)
+- Include complete information (documents, fees, procedures)
+- Use clear headings and structure
+- Plain text format works best
+
+**Service Type Matching:**
+The system matches service types flexibly:
+- "License Renewal" matches "license renewal", "renewal", "license"
+- "Vehicle Registration" matches "vehicle registration", "registration"
+- Case-insensitive matching
+
+**Multiple Documents:**
+- You can have multiple documents for the same state/service
+- The system will retrieve from all relevant documents
+- Conflict detection will flag contradictory information
+
+### Example: Adding a New Document
+
+Let's say you want to add Tamil Nadu vehicle transfer policy:
+
+1. **Create file:** `policy_documents/tamil_nadu_transfer.txt`
+2. **Add content:**
+   ```
+   TAMIL NADU TRANSFER POLICY
+
+   DOCUMENT REQUIREMENTS FOR VEHICLE TRANSFER IN TAMIL NADU
+
+   For transferring vehicle ownership in Tamil Nadu, the following documents are required:
+
+   1. Original Registration Certificate (RC)
+   2. Form 29 (Notice of transfer of ownership)
+   3. Form 30 (Report of transfer)
+   4. No Objection Certificate (NOC) from original owner
+   5. Valid Insurance Certificate
+   6. Address proof of new owner
+   7. Passport size photographs
+
+   PROCEDURE AND TIMELINE
+
+   - Transfer must be completed within 14 days of sale
+   - Both buyer and seller must sign the forms
+   - Process takes 7-10 working days
+
+   FEES
+
+   - Transfer fee: ₹300 for two-wheelers, ₹500 for four-wheelers
+   - Additional service charges may apply
+   ```
+
+3. **Run ingestion:**
+   ```bash
+   python -m app.scripts.ingest_policy_docs --folder policy_documents
+   ```
+
+4. **Test:**
+   - Ask: "What documents are needed for vehicle transfer in Tamil Nadu?"
+   - Should answer based on your new document
+
+### Batch Import
+
+You can add multiple documents at once:
+- Just create all the `.txt` files in the `policy_documents` folder
+- Run the ingestion script once
+- It will process all files in the folder
+
+### Updating Existing Documents
+
+If you need to update a policy document:
+1. Edit the existing `.txt` file
+2. Run the ingestion script again
+3. The system will add new chunks (you may want to clear old ones first)
+
+### Clearing Old Data (Optional)
+
+If you want to clear existing policy chunks before re-importing:
+
+```bash
+python -c "from app.core.database import SessionLocal; from app.models.models import PolicyChunk; db = SessionLocal(); db.query(PolicyChunk).delete(); db.commit(); print('Cleared all policy chunks'); db.close()"
+```
+
+Then re-run the ingestion script.
+
+That's it! The system is designed to be simple - just add text files and run the ingestion script. The AI will then be able to answer questions based on your actual policy documents.

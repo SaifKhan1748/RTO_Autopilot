@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}New Case - RTO Autopilot{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between mb-6">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-primary-900 sm:text-3xl sm:truncate">
+                Start New Case
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Create a new case for an existing customer
+            </p>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4">
+            <a href="/dashboard" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- New Case Form -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 class="text-lg leading-6 font-medium text-primary-900">
+                Case Information
+            </h3>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                Select a customer and enter case details
+            </p>
+        </div>
+        
+        <form method="post" action="/new-case" class="px-4 py-5 sm:p-6">
+            {% if error %}
+            <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <span class="block sm:inline">{{ error }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                <!-- Customer Selection -->
+                <div class="sm:col-span-6">
+                    <label for="customer_id" class="block text-sm font-medium text-gray-700">
+                        Select Customer <span class="text-red-500">*</span>
+                    </label>
+                    <div class="mt-1">
+                        <select name="customer_id" 
+                                id="customer_id" 
+                                required
+                                class="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2">
+                            <option value="">-- Select a customer --</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.id }}">{{ customer.full_name }} ({{ customer.phone }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% if not customers %}
+                    <p class="mt-2 text-sm text-red-600">
+                        No customers found. <a href="/add-customer" class="text-primary-600 hover:text-primary-500">Add a customer first</a>.
+                    </p>
+                    {% endif %}
+                </div>
+
+                <!-- Service Type -->
+                <div class="sm:col-span-6">
+                    <label for="service_type" class="block text-sm font-medium text-gray-700">
+                        Service Type <span class="text-red-500">*</span>
+                    </label>
+                    <div class="mt-1">
+                        <input type="text" 
+                               name="service_type" 
+                               id="service_type" 
+                               required
+                               class="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
+                               placeholder="e.g., License Renewal, Vehicle Registration, Transfer">
+                    </div>
+                </div>
+
+                <!-- Vehicle Number (Optional) -->
+                <div class="sm:col-span-3">
+                    <label for="vehicle_number" class="block text-sm font-medium text-gray-700">
+                        Vehicle Number (Optional)
+                    </label>
+                    <div class="mt-1">
+                        <input type="text" 
+                               name="vehicle_number" 
+                               id="vehicle_number" 
+                               class="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
+                               placeholder="e.g., ABC-1234">
+                    </div>
+                </div>
+
+                <!-- Notes (Optional) -->
+                <div class="sm:col-span-6">
+                    <label for="notes" class="block text-sm font-medium text-gray-700">
+                        Notes (Optional)
+                    </label>
+                    <div class="mt-1">
+                        <textarea name="notes" 
+                                  id="notes" 
+                                  rows="3"
+                                  class="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md border p-2"
+                                  placeholder="Additional notes about this case"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-6 flex justify-end">
+                <a href="/dashboard" class="mr-3 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Create Case
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

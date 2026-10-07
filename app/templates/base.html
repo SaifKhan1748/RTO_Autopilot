@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}RTO Autopilot{% endblock %}</title>
+    
+    <!-- Tailwind CSS CDN - This loads Tailwind directly without any build step -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Tailwind configuration for our professional color scheme -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f4f8',
+                            100: '#e0e7ef',
+                            200: '#c9d6e3',
+                            300: '#a8c0d4',
+                            400: '#7fa3c0',
+                            500: '#5c8aab',
+                            600: '#447090',
+                            700: '#365972',
+                            800: '#2d4a5e',
+                            900: '#263d4f',
+                            950: '#1a2b38',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    
+    <!-- Top Navigation Bar -->
+    <nav class="bg-primary-900 text-white shadow-lg">
+        <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo/Product Name -->
+                <div class="flex items-center flex-shrink-0">
+                    <h1 class="text-xl font-bold tracking-tight truncate">
+                        RTO Autopilot{% if office_display_name %} — {{ office_display_name }}{% endif %}
+                    </h1>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-btn" class="text-gray-300 hover:text-white focus:outline-none p-2">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Desktop Navigation Links -->
+                <div class="hidden md:block">
+                    <div class="flex items-center space-x-1">
+                        <a href="/status" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Check Status</a>
+                        <a href="/dashboard" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="/analytics" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Analytics</a>
+                        <a href="/intake" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">AI Intake</a>
+                        <a href="/reminders" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Reminders</a>
+                        <a href="/add-customer" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Add Customer</a>
+                        <a href="/new-case" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">New Case</a>
+                        {% if staff_role == 'admin' %}
+                        <div class="relative group">
+                            <button class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center">
+                                Admin
+                                <svg class="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div class="absolute hidden group-hover:block bg-primary-800 rounded-md shadow-lg mt-0 w-48 z-50">
+                                <a href="/admin/checklist" class="block px-4 py-2 text-sm text-gray-300 hover:bg-primary-700 hover:text-white">Checklists</a>
+                                <a href="/admin/data-deletion" class="block px-4 py-2 text-sm text-gray-300 hover:bg-red-700 hover:text-white">Data Deletion</a>
+                                <a href="/admin/audit-log" class="block px-4 py-2 text-sm text-gray-300 hover:bg-purple-700 hover:text-white">Audit Log</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <a href="/logout" class="text-gray-300 hover:bg-red-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile menu -->
+            <div id="mobile-menu" class="hidden md:hidden pb-4">
+                <div class="flex flex-col space-y-2">
+                    <a href="/status" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Check Status</a>
+                    <a href="/dashboard" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                    <a href="/analytics" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Analytics</a>
+                    <a href="/intake" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">AI Intake</a>
+                    <a href="/reminders" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Reminders</a>
+                    <a href="/add-customer" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Add Customer</a>
+                    <a href="/new-case" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">New Case</a>
+                    {% if staff_role == 'admin' %}
+                    <a href="/admin/checklist" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Checklists</a>
+                    <a href="/admin/data-deletion" class="text-gray-300 hover:bg-red-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Data Deletion</a>
+                    <a href="/admin/audit-log" class="text-gray-300 hover:bg-purple-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Audit Log</a>
+                    {% endif %}
+                    <a href="/logout" class="text-gray-300 hover:bg-red-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content Area -->
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-primary-900 text-white mt-auto">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-primary-200 text-sm">
+                &copy; 2026 RTO Autopilot. All rights reserved.
+            </p>
+        </div>
+    </footer>
+    
+    {% block extra_scripts %}{% endblock %}
+
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>

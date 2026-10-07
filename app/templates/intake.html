@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}Conversational Intake - RTO Autopilot{% endblock %}
+
+{% block extra_head %}
+<style>
+    .chat-container {
+        height: calc(100vh - 300px);
+        min-height: 400px;
+    }
+    
+    .message-bubble {
+        max-width: 70%;
+        word-wrap: break-word;
+    }
+    
+    .typing-indicator span {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #9ca3af;
+        animation: typing 1.4s infinite ease-in-out both;
+        margin: 0 2px;
+    }
+    
+    .typing-indicator span:nth-child(1) {
+        animation-delay: -0.32s;
+    }
+    
+    .typing-indicator span:nth-child(2) {
+        animation-delay: -0.16s;
+    }
+    
+    @keyframes typing {
+        0%, 80%, 100% {
+            transform: scale(0);
+        }
+        40% {
+            transform: scale(1);
+        }
+    }
+    
+    .scroll-smooth {
+        scroll-behavior: smooth;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between mb-6">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-primary-900 sm:text-3xl sm:truncate">
+                Conversational Intake
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Chat with our AI assistant to quickly create a new case
+            </p>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4 space-x-3">
+            <button onclick="resetConversation()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                Start New Conversation
+            </button>
+            <a href="/dashboard" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Chat Container -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <!-- Messages Area -->
+        <div id="chat-messages" class="chat-container overflow-y-auto p-4 space-y-4 scroll-smooth">
+            <!-- Messages will be dynamically added here -->
+        </div>
+
+        <!-- Input Area -->
+        <div class="border-t border-gray-200 p-4 bg-gray-50">
+            <form id="chat-form" class="flex space-x-3">
+                <input 
+                    type="text" 
+                    id="message-input" 
+                    class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-4 py-2 border"
+                    placeholder="Type your message here..."
+                    autocomplete="off"
+                >
+                <button 
+                    type="submit" 
+                    id="send-button"
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                    Send
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="mt-4 bg-blue-50 border border-blue-200 rounded-md p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">
+                    How It Works
+                </h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    <p>I can help you with any RTO service or general inquiry. Just tell me what you need, and I'll guide you through the process step by step.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div id="success-modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-lg font-medium text-gray-900">
+                        Case Created Successfully!
+                    </h3>
+                </div>
+            </div>
+            <div class="mt-4">
+                <p id="success-message" class="text-sm text-gray-600">
+                    Your case has been created successfully.
+                </p>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeModal()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Close
+                </button>
+                <a id="case-link" href="#" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    View Case
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+    let conversationState = {
+        ready_to_submit: false,
+        service_type: null,
+        collected_data: {}
+    };
+
+    // Initialize the conversation when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeConversation();
+    });
+
+    async function initializeConversation() {
+        try {
+            const response = await fetch('/intake/api');
+            const data = await response.json();
+            
+            // Add welcome message
+            addMessage(data.welcome_message, 'assistant');
+            
+        } catch (error) {
+            console.error('Error initializing conversation:', error);
+            addMessage('Sorry, I had trouble starting. Please refresh the page.', 'assistant');
+        }
+    }
+
+    // Handle form submission
+    document.getElementById('chat-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const messageInput = document.getElementById('message-input');
+        const message = messageInput.value.trim();
+        
+        if (!message) return;
+        
+        // Add user message to chat
+        addMessage(message, 'user');
+        messageInput.value = '';
+        
+        // Disable input while processing
+        messageInput.disabled = true;
+        document.getElementById('send-button').disabled = true;
+        
+        // Show typing indicator
+        showTypingIndicator();
+        
+        try {
+            const response = await fetch('/intake/api/message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    reset: false
+                })
+            });
+            
+            const data = await response.json();
+            
+            // Remove typing indicator
+            hideTypingIndicator();
+            
+            // Add assistant response
+            addMessage(data.reply, 'assistant');
+            
+            // Update conversation state
+            conversationState.ready_to_submit = data.ready_to_submit;
+            conversationState.service_type = data.service_type;
+            conversationState.collected_data = data.collected_data || {};
+            
+            // Show submit button if ready
+            if (data.ready_to_submit) {
+                showSubmitButton();
+            }
+            
+        } catch (error) {
+            console.error('Error sending message:', error);
+            hideTypingIndicator();
+            addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+        }
+        
+        // Re-enable input
+        messageInput.disabled = false;
+        document.getElementById('send-button').disabled = false;
+        messageInput.focus();
+    });
+
+    function addMessage(text, sender) {
+        const chatMessages = document.getElementById('chat-messages');
+        const messageDiv = document.createElement('div');
+        
+        if (sender === 'user') {
+            messageDiv.className = 'flex justify-end';
+            messageDiv.innerHTML = `
+                <div class="message-bubble bg-primary-600 text-white px-4 py-2 rounded-lg">
+                    <p class="text-sm">${escapeHtml(text)}</p>
+                </div>
+            `;
+        } else {
+            messageDiv.className = 'flex justify-start';
+            messageDiv.innerHTML = `
+                <div class="message-bubble bg-gray-100 text-gray-900 px-4 py-2 rounded-lg">
+                    <p class="text-sm">${escapeHtml(text)}</p>
+                </div>
+            `;
+        }
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+        const chatMessages = document.getElementById('chat-messages');
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'typing-indicator';
+        typingDiv.className = 'flex justify-start';
+        typingDiv.innerHTML = `
+            <div class="message-bubble bg-gray-100 px-4 py-2 rounded-lg">
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+
+    function showSubmitButton() {
+        const chatMessages = document.getElementById('chat-messages');
+        const submitDiv = document.createElement('div');
+        submitDiv.id = 'submit-button-container';
+        submitDiv.className = 'flex justify-center my-4';
+        submitDiv.innerHTML = `
+            <button onclick="submitIntake()" class="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                Submit and Create Case
+            </button>
+        `;
+        chatMessages.appendChild(submitDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function submitIntake() {
+        try {
+            const response = await fetch('/intake/api/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    service_type: conversationState.service_type,
+                    collected_data: conversationState.collected_data
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Show success modal
+                document.getElementById('success-message').textContent = data.message;
+                document.getElementById('case-link').href = data.redirect_url;
+                document.getElementById('success-modal').classList.remove('hidden');
+                document.getElementById('success-modal').classList.add('flex');
+                
+                // Remove submit button
+                const submitButton = document.getElementById('submit-button-container');
+                if (submitButton) {
+                    submitButton.remove();
+                }
+            } else {
+                addMessage('There was an error creating your case. Please try again.', 'assistant');
+            }
+            
+        } catch (error) {
+            console.error('Error submitting intake:', error);
+            addMessage('Sorry, I encountered an error creating your case. Please try again.', 'assistant');
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('success-modal').classList.add('hidden');
+        document.getElementById('success-modal').classList.remove('flex');
+    }
+
+    async function resetConversation() {
+        try {
+            const response = await fetch('/intake/api/reset', {
+                method: 'POST'
+            });
+            
+            const data = await response.json();
+            
+            // Clear chat messages
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = '';
+            
+            // Reset state
+            conversationState = {
+                ready_to_submit: false,
+                service_type: null,
+                collected_data: {}
+            };
+            
+            // Initialize new conversation
+            addMessage(data.welcome_message, 'assistant');
+            
+        } catch (error) {
+            console.error('Error resetting conversation:', error);
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+{% endblock %}
+{% endblock %}
