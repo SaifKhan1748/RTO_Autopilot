@@ -8,6 +8,7 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
 starlette
+itsdangerous
 apscheduler
 groq
 reportlab
