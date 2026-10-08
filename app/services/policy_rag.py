@@ -9,8 +9,6 @@ import logging
 from typing import List, Dict, Optional, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
-from sentence_transformers import SentenceTransformer
-import numpy as np
 from app.core.database import SessionLocal
 from app.models.models import PolicyChunk
 from app.core.ai_client import get_ai_client, get_ai_model
@@ -22,52 +20,68 @@ class PolicyRAGService:
     
     def __init__(self):
         """Initialize the RAG service with embedding model."""
-        logger.info("Loading sentence-transformers model for RAG...")
-        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-        logger.info("Embedding model loaded successfully")
+        logger.info("Initializing RAG service...")
+        self.embedding_model = None
         self.ai_client = get_ai_client()
         self.ai_model = get_ai_model()
+        
+        # Try to load sentence-transformers (optional for deployment)
+        try:
+            from sentence_transformers import SentenceTransformer
+            import numpy as np
+            logger.info("Loading sentence-transformers model for RAG...")
+            self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+            self.np = np
+            logger.info("Embedding model loaded successfully")
+        except ImportError:
+            logger.warning("sentence-transformers not available. RAG feature will be disabled.")
+            self.np = None
     
     def _generate_embedding(self, text: str) -> List[float]:
         """Generate embedding for a text query."""
+        if self.embedding_model is None:
+            raise ImportError("sentence-transformers is not installed. RAG feature is disabled.")
         embedding = self.embedding_model.encode(text)
         return embedding.tolist()
     
     def _retrieve_relevant_chunks(
-        self, 
-        question: str, 
-        state: Optional[str] = None, 
+        self,
+        question: str,
+        state: Optional[str] = None,
         service_type: Optional[str] = None,
         top_k: int = 5
     ) -> List[PolicyChunk]:
         """
         Retrieve the most relevant policy chunks for a question.
-        
+
         Args:
             question: The user's question
             state: Optional state filter (e.g., "Karnataka")
             service_type: Optional service type filter (e.g., "License Renewal")
             top_k: Number of chunks to retrieve
-        
+
         Returns:
             List of relevant PolicyChunk objects
         """
+        if self.embedding_model is None or self.np is None:
+            raise ImportError("sentence-transformers is not installed. RAG feature is disabled.")
+
         db = SessionLocal()
         try:
             # Generate embedding for the question
-            question_embedding = np.array(self._generate_embedding(question))
-            
+            question_embedding = self.np.array(self._generate_embedding(question))
+
             # Build the query
             query = db.query(PolicyChunk)
-            
+
             # Apply filters if provided
             if state:
                 query = query.filter(PolicyChunk.state.ilike(f"%{state}%"))
-            
+
             if service_type:
                 # Make service type matching more flexible
                 service_type_lower = service_type.lower()
-                
+
                 # Try matching key terms in the service type
                 if "renewal" in service_type_lower:
                     query = query.filter(PolicyChunk.service_type.ilike("%renewal%"))
@@ -80,26 +94,26 @@ class PolicyRAGService:
                 else:
                     # Fallback to exact match
                     query = query.filter(PolicyChunk.service_type.ilike(f"%{service_type}%"))
-            
+
             # Get all candidate chunks
             chunks = query.all()
-            
+
             # Calculate cosine similarity for each chunk
             chunk_similarities = []
             for chunk in chunks:
-                chunk_embedding = np.array(chunk.embedding)
+                chunk_embedding = self.np.array(chunk.embedding)
                 # Calculate cosine similarity
-                similarity = np.dot(question_embedding, chunk_embedding) / (
-                    np.linalg.norm(question_embedding) * np.linalg.norm(chunk_embedding)
+                similarity = self.np.dot(question_embedding, chunk_embedding) / (
+                    self.np.linalg.norm(question_embedding) * self.np.linalg.norm(chunk_embedding)
                 )
                 chunk_similarities.append((chunk, similarity))
-            
+
             # Sort by similarity and get top_k
             chunk_similarities.sort(key=lambda x: x[1], reverse=True)
             top_chunks = [chunk for chunk, similarity in chunk_similarities[:top_k]]
-            
+
             return top_chunks
-            
+
         finally:
             db.close()
     
@@ -236,25 +250,33 @@ Provide a clear, accurate answer based on the policy documents above. Include sp
             }
     
     def ask_question(
-        self, 
-        question: str, 
-        state: Optional[str] = None, 
+        self,
+        question: str,
+        state: Optional[str] = None,
         service_type: Optional[str] = None
     ) -> Dict:
         """
         Ask a policy question and get an answer with sources.
-        
+
         Args:
             question: The user's question
             state: Optional state filter
             service_type: Optional service type filter
-        
+
         Returns:
             Dictionary with answer, sources, and conflict information
         """
+        if self.embedding_model is None:
+            return {
+                "answer": "RAG feature is not available in this deployment. The policy intelligence feature requires additional dependencies.",
+                "sources": [],
+                "has_conflict": False,
+                "conflict_reason": ""
+            }
+
         # Retrieve relevant chunks
         chunks = self._retrieve_relevant_chunks(question, state, service_type)
-        
+
         if not chunks:
             return {
                 "answer": "I couldn't find any relevant policy information for your question. The policy database may not contain information about this topic yet.",
@@ -262,10 +284,10 @@ Provide a clear, accurate answer based on the policy documents above. Include sp
                 "has_conflict": False,
                 "conflict_reason": ""
             }
-        
+
         # Detect conflicts
         has_conflict, conflict_reason = self._detect_conflicts(chunks)
-        
+
         if has_conflict:
             return {
                 "answer": "POLICY CONFLICT DETECTED: The retrieved policy chunks contain contradictory information. This requires human review to determine the correct policy.",
@@ -281,12 +303,12 @@ Provide a clear, accurate answer based on the policy documents above. Include sp
                 "has_conflict": True,
                 "conflict_reason": conflict_reason
             }
-        
+
         # Generate answer
         result = self._generate_answer(question, chunks)
         result["has_conflict"] = has_conflict
         result["conflict_reason"] = conflict_reason
-        
+
         return result
 
 # Global service instance

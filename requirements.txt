@@ -13,7 +13,6 @@ apscheduler
 groq
 reportlab
 boto3
-sentence-transformers
 numpy
 pytest
 pytest-asyncio

@@ -69,3 +69,23 @@ Thumbs.db
 # Application specific
 uploads/
 temp/
+
+# Migration and test scripts (not needed in production)
+check_all_tables.py
+check_db.py
+check_local_db.py
+create_test_analytics_data.py
+create_test_cases_for_analysis.py
+create_test_staff.py
+enable_pgvector.py
+migrate_events_case_id_nullable.py
+migrate_multi_office.py
+migrate_password_reset.py
+migrate_reminders.py
+migrate_to_neon.py
+migrate_to_r2.py
+reset_db.py
+test_rag_system.py
+R2_MIGRATION_SUMMARY.md
+R2_SETUP_GUIDE.md
+SECURITY_ROUTE_REVIEW.md
