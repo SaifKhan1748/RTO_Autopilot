@@ -21,7 +21,14 @@ if not DATABASE_URL:
 
 # Create the SQLAlchemy engine
 # This engine manages the database connections
-engine = create_engine(DATABASE_URL)
+# Add pool settings for better resilience
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,  # Check connections before using them
+    pool_recycle=3600,   # Recycle connections after 1 hour
+    pool_size=5,
+    max_overflow=10
+)
 
 # Create a SessionLocal class
 # This will be used to create database sessions for interacting with the database

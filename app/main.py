@@ -97,7 +97,12 @@ def check_admin_role(request: Request, db: Session):
     return staff and staff.role == "admin"
 
 # Create database tables (if they don't exist)
-Base.metadata.create_all(bind=engine)
+# Wrap in try-except to handle connection issues gracefully
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    logger.warning(f"Could not create database tables at startup: {e}")
+    logger.info("Tables may already exist or will be created manually")
 
 @app.get("/", response_class=HTMLResponse)
 @limiter.limit("30/minute")
