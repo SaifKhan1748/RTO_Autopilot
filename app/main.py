@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, Depends, HTTPException, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, JSONResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -82,6 +83,9 @@ app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "fallba
 # Set up Jinja2 templates
 templates = Jinja2Templates(directory="app/templates")
 
+# Mount static files directory for PWA assets
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
 # Helper function to check admin role in route handlers
 def check_admin_role(request: Request, db: Session):
     """
@@ -108,6 +112,11 @@ except Exception as e:
 @limiter.limit("30/minute")
 async def home(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
+
+@app.get("/offline", response_class=HTMLResponse)
+async def offline_page(request: Request):
+    """Render the offline page for PWA."""
+    return templates.TemplateResponse(request=request, name="offline.html")
 
 @app.get("/login", response_class=HTMLResponse)
 @limiter.limit("20/minute")

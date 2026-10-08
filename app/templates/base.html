@@ -4,7 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}RTO Autopilot{% endblock %}</title>
-    
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#447090">
+
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/static/icon-512.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/static/icon-192.png">
+
     <!-- Tailwind CSS CDN - This loads Tailwind directly without any build step -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -89,20 +98,20 @@
 
             <!-- Mobile menu -->
             <div id="mobile-menu" class="hidden md:hidden pb-4">
-                <div class="flex flex-col space-y-2">
-                    <a href="/status" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Check Status</a>
-                    <a href="/dashboard" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                    <a href="/analytics" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Analytics</a>
-                    <a href="/intake" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">AI Intake</a>
-                    <a href="/reminders" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Reminders</a>
-                    <a href="/add-customer" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Add Customer</a>
-                    <a href="/new-case" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">New Case</a>
+                <div class="flex flex-col space-y-1">
+                    <a href="/status" class="text-gray-300 hover:bg-primary-700 hover:text-white px-4 py-3 rounded-md text-base font-medium min-h-[48px] flex items-center">Check Status</a>
+                    <a href="/dashboard" class="text-gray-300 hover:bg-primary-700 hover:text-white px-4 py-3 rounded-md text-base font-medium min-h-[48px] flex items-center">Dashboard</a>
+                    <a href="/analytics" class="text-gray-300 hover:bg-primary-700 hover:text-white px-4 py-3 rounded-md text-base font-medium min-h-[48px] flex items-center">Analytics</a>
+                    <a href="/intake" class="text-gray-300 hover:bg-primary-700 hover:text-white px-4 py-3 rounded-md text-base font-medium min-h-[48px] flex items-center">AI Intake</a>
+                    <a href="/reminders" class="text-gray-300 hover:bg-primary-700 hover:text-white px-4 py-3 rounded-md text-base font-medium min-h-[48px] flex items-center">Reminders</a>
+                    <a href="/add-customer" class="text-gray-300 hover:bg-primary-700 hover:text-white px-4 py-3 rounded-md text-base font-medium min-h-[48px] flex items-center">Add Customer</a>
+                    <a href="/new-case" class="text-gray-300 hover:bg-primary-700 hover:text-white px-4 py-3 rounded-md text-base font-medium min-h-[48px] flex items-center">New Case</a>
                     {% if staff_role == 'admin' %}
-                    <a href="/admin/checklist" class="text-gray-300 hover:bg-primary-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Checklists</a>
-                    <a href="/admin/data-deletion" class="text-gray-300 hover:bg-red-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Data Deletion</a>
-                    <a href="/admin/audit-log" class="text-gray-300 hover:bg-purple-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Audit Log</a>
+                    <a href="/admin/checklist" class="text-gray-300 hover:bg-primary-700 hover:text-white px-4 py-3 rounded-md text-base font-medium min-h-[48px] flex items-center">Checklists</a>
+                    <a href="/admin/data-deletion" class="text-gray-300 hover:bg-red-700 hover:text-white px-4 py-3 rounded-md text-base font-medium min-h-[48px] flex items-center">Data Deletion</a>
+                    <a href="/admin/audit-log" class="text-gray-300 hover:bg-purple-700 hover:text-white px-4 py-3 rounded-md text-base font-medium min-h-[48px] flex items-center">Audit Log</a>
                     {% endif %}
-                    <a href="/logout" class="text-gray-300 hover:bg-red-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                    <a href="/logout" class="text-gray-300 hover:bg-red-700 hover:text-white px-4 py-3 rounded-md text-base font-medium min-h-[48px] flex items-center">Logout</a>
                 </div>
             </div>
         </div>
@@ -130,6 +139,19 @@
             const menu = document.getElementById('mobile-menu');
             menu.classList.toggle('hidden');
         });
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then((registration) => {
+                        console.log('Service Worker registered successfully:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
     </script>
 </body>
 </html>
